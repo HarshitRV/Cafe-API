@@ -32,6 +32,7 @@ cafes = db.session.query(Cafe).all()
 def home():
     return render_template("index.html",cafes=cafes)
 
+# give random coffee place
 @app.route("/random")   
 def random_cafe():
     random_cafe = random.choice(cafes)
@@ -51,6 +52,7 @@ def random_cafe():
         }
     )
 
+# gets all the coffee place from DB
 @app.route("/all")
 def all_cafe():
     cafe_list = []
@@ -73,6 +75,7 @@ def all_cafe():
 
     return jsonify(cafe = cafe_list)
 
+# searches for a coffee place at mentioned location
 @app.route("/search")
 def search():
     loc = request.args.get("loc")  
@@ -100,14 +103,16 @@ def search():
             error="Sorry, we don't have cafe at that location."
         )
 
+# update the price of a coffee place by searching for it using id
 @app.route("/update-price/<id>")
 def update_price(id):
     updated_price = request.args.get("")
     price_update = Cafe.query.get(int(id))
     price_update.coffee_price
-## HTTP POST - Create Record
 
-## HTTP PUT/PATCH - Update Record
+
+# TODO REMAINING
+## HTTP PUT - Update Record
 
 ## HTTP DELETE - Delete Record
 
