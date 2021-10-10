@@ -1,9 +1,11 @@
+from logging import error
 from flask import Flask, jsonify, render_template, request
-from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy, sqlalchemy
 import random
 
 
 app = Flask(__name__)
+API_KEY = "SecretKey"
 
 ##Connect to Database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cafes.db'
@@ -32,7 +34,7 @@ cafes = db.session.query(Cafe).all()
 def home():
     return render_template("index.html",cafes=cafes)
 
-# give random coffee place
+# gets random coffee place
 @app.route("/random")   
 def random_cafe():
     random_cafe = random.choice(cafes)
@@ -101,21 +103,53 @@ def search():
     except AttributeError:
         return jsonify(
             error="Sorry, we don't have cafe at that location."
-        )
+        ), 404
 
-# update the price of a coffee place by searching for it using id
+# update the record of a coffee place by searching for it using id
 @app.route("/update-price/<id>")
 def update_price(id):
-    updated_price = request.args.get("")
-    price_update = Cafe.query.get(int(id))
-    price_update.coffee_price
+    updated_price = request.args.get("new_price")
+    api_key = request.args.get("api_key")
 
+    if api_key == API_KEY:
+        try:
+            price_update = Cafe.query.get(int(id))
+            price_update.coffee_price = updated_price
+            db.session.commit()
+            return jsonify(
+                success="Succesfully updated the price"
+            ), 200
+        except AttributeError:
+            return jsonify(
+                error={
+                    "Not found": "Sorry no coffee house exist with that id"
+                }
+            ), 404
+    else:
+        return jsonify(error="Invalid API Key")
 
-# TODO REMAINING
-## HTTP PUT - Update Record
+@app.route("/report-closed/<id>")
+def delete_record(id):
+    api_key = request.args.get("api_key")
+    if api_key == API_KEY:
+        try:
+            cafe_ = Cafe.query.get(int(id))
+            db.session.delete(cafe_)
+            db.session.commit()
 
-## HTTP DELETE - Delete Record
-
+            return jsonify(success = "Succesfully deleted the record")
+        except sqlalchemy.orm.exc.UnmappedInstanceError:
+            return jsonify(
+                error = {
+                    "Not Found": "Sorry the id isn't valid."
+                }
+            )
+    else:
+        return jsonify(
+            error = {
+                "Not Found": "Sorry the api key isn't valid."
+            }
+        )
 
 if __name__ == '__main__':
     app.run(debug=True)
